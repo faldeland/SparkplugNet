@@ -38,11 +38,11 @@ namespace SparkplugNet.Core.Node
         /// <param name="convertPayloadToJson">if set to <c>true</c> [convert payload to json].</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         public SparkplugNodeOptions(
-            string brokerAddress,
+            string? brokerAddress,
             int port,
             string clientId,
-            string userName,
-            string password,
+            string? userName,
+            string? password,
             bool useTls,
             string scadaHostIdentifier,
             string groupIdentifier,
@@ -72,7 +72,7 @@ namespace SparkplugNet.Core.Node
         /// <summary>
         /// Gets or sets the broker address.
         /// </summary>
-        public string BrokerAddress { get; set; }
+        public string? BrokerAddress { get; set; }
 
         /// <summary>
         /// Gets or sets the port.
@@ -87,12 +87,12 @@ namespace SparkplugNet.Core.Node
         /// <summary>
         /// Gets or sets the user name.
         /// </summary>
-        public string UserName { get; set; }
+        public string? UserName { get; set; }
 
         /// <summary>
         /// Gets or sets the password.
         /// </summary>
-        public string Password { get; set; }
+        public string? Password { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether TLS should be used or not.

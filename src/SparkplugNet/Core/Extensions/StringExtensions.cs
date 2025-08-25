@@ -19,7 +19,7 @@ namespace SparkplugNet.Core.Extensions
         /// </summary>
         /// <param name="value">The value.</param>
         /// <returns><c>true</c> if the given identifier is valid, <c>false</c> else.</returns>
-        internal static bool IsIdentifierValid(this string value)
+        internal static bool IsIdentifierValid(this string? value)
         {
             return !string.IsNullOrWhiteSpace(value) && !value.Contains("/") && !value.Contains("#") && !value.Contains("+");
         }

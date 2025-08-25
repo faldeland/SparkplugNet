@@ -40,16 +40,16 @@ namespace SparkplugNet.Core.Device
         /// <param name="convertPayloadToJson">if set to <c>true</c> [convert payload to json].</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         public SparkplugDeviceOptions(
-            string brokerAddress,
+            string? brokerAddress,
             int port,
             string clientId,
-            string userName,
-            string password,
+            string? userName,
+            string? password,
             bool useTls,
             string scadaHostIdentifier,
             string groupIdentifier,
             string edgeNodeIdentifier,
-            string deviceIdentifier,
+            string? deviceIdentifier,
             Guid deviceGuid,
             TimeSpan reconnectInterval,
             MqttClientOptionsBuilderWebSocketParameters? webSocketParameters = null,
@@ -78,7 +78,7 @@ namespace SparkplugNet.Core.Device
         /// <summary>
         /// Gets or sets the broker address.
         /// </summary>
-        public string BrokerAddress { get; set; }
+        public string? BrokerAddress { get; set; }
 
         /// <summary>
         /// Gets or sets the port.
@@ -93,12 +93,12 @@ namespace SparkplugNet.Core.Device
         /// <summary>
         /// Gets or sets the user name.
         /// </summary>
-        public string UserName { get; set; }
+        public string? UserName { get; set; }
 
         /// <summary>
         /// Gets or sets the password.
         /// </summary>
-        public string Password { get; set; }
+        public string? Password { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether TLS should be used or not.
@@ -123,7 +123,7 @@ namespace SparkplugNet.Core.Device
         /// <summary>
         /// Gets or sets the device identifier.
         /// </summary>
-        public string DeviceIdentifier { get; set; }
+        public string? DeviceIdentifier { get; set; }
 
         /// <summary>
         /// Gets or sets the device unique identifier.

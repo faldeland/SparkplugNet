@@ -67,7 +67,7 @@
             this List<Payload.Metric> metrics,
             string metricName,
             ulong timestamp,
-            object value,
+            object? value,
             bool isTransient,
             bool isHistorical)
         {
@@ -86,7 +86,7 @@
             this List<Payload.Metric> metrics,
             string metricName,
             ulong timestamp,
-            object value)
+            object? value)
         {
             SetMetric(metrics, metricName, timestamp, value, isNull: false, isTransient: false, isHistorical: true);
         }
@@ -102,7 +102,7 @@
             this List<Payload.Metric> metrics,
             string metricName,
             ulong timestamp,
-            object value)
+            object? value)
         {
             SetMetric(metrics, metricName, timestamp, value, isNull: false, isTransient: true, isHistorical: false);
         }
@@ -118,7 +118,7 @@
             this List<Payload.Metric> metrics,
             string metricName,
             ulong timestamp,
-            object value)
+            object? value)
         {
             SetMetric(metrics, metricName, timestamp, value, isNull: true, isTransient: false, isHistorical: false);
         }
@@ -138,7 +138,7 @@
             IEnumerable<Payload.Metric> metrics,
             string metricName,
             ulong timestamp,
-            object value,
+            object? value,
             bool isNull = false,
             bool isTransient = false,
             bool isHistorical = false)
@@ -253,7 +253,7 @@
                 case (int)SparkplugBDataType.Dataset:
                     try
                     {
-                        metric.DatasetValue = isNull ? null :(Payload.DataSet)value;
+                        metric.DatasetValue = isNull ? null :(Payload.DataSet)value!;
                     }
                     catch (Exception)
                     {
@@ -264,7 +264,7 @@
                 case (int)SparkplugBDataType.Template:
                     try
                     {
-                        metric.TemplateValue = isNull ? null :(Payload.Template)value;
+                        metric.TemplateValue = isNull ? null :(Payload.Template)value!;
 
                     }
                     catch (Exception)
