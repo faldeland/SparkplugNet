@@ -269,6 +269,7 @@ namespace SparkplugNet.Core.Device
 
             // Debug output.
             onlineMessage.ToJson();
+            this.ChildOf.LogAction?.Invoke($"Attempting DBIRTH Publish for Device={this.options.DeviceIdentifier}");
 
             // Publish data.
             this.options.CancellationToken ??= CancellationToken.None;
@@ -276,6 +277,7 @@ namespace SparkplugNet.Core.Device
             try
             {
                 var result = await this.ChildOf.Client.PublishAsync(onlineMessage, this.options.CancellationToken.Value);
+                this.ChildOf.LogAction?.Invoke($"DBIRTH Publish result for Device={this.options.DeviceIdentifier}: ReasonCode={result.ReasonCode}");
                 switch (result.ReasonCode)
                 {
                     case MqttClientPublishReasonCode.Success:
@@ -287,7 +289,8 @@ namespace SparkplugNet.Core.Device
             }
             catch (Exception e)
             {
-                this.ChildOf.OnException?.Invoke(e);
+                this.ChildOf.LogAction?.Invoke($"DBIRTH Publish for Device={this.options.DeviceIdentifier} threw an exception: {e.GetType().Name}: {e.Message}");
+                this.ChildOf?.OnException?.Invoke(e);
             }
         }
 
@@ -314,13 +317,16 @@ namespace SparkplugNet.Core.Device
                 1, this.options.ConvertPayloadToJson);
 
             this.options.CancellationToken ??= CancellationToken.None;
+            this.ChildOf.LogAction?.Invoke($"Attempting DDEATH Publish for Device={this.options.DeviceIdentifier}");
 
             try
             {
                 await this.ChildOf.Client.PublishAsync(willMessage, this.options.CancellationToken.Value);
+                this.ChildOf.LogAction?.Invoke($"DDEATH Publish completed for Device={this.options.DeviceIdentifier}");
             }
             catch (Exception e)
             {
+                this.ChildOf.LogAction?.Invoke($"DDEATH Publish for Device={this.options.DeviceIdentifier} threw an exception: {e.GetType().Name}: {e.Message}");
                 this.ChildOf.OnException?.Invoke(e);
             }
         }

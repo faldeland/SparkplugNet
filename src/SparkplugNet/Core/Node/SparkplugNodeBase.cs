@@ -20,6 +20,7 @@ namespace SparkplugNet.Core.Node
     using MQTTnet.Client;
     using MQTTnet.Client.Options;
     using MQTTnet.Client.Publishing;
+    using MQTTnet.Client.Subscribing;
     using MQTTnet.Formatter;
     using MQTTnet.Protocol;
     using SparkplugNet.Core.Enumerations;
@@ -266,8 +267,12 @@ namespace SparkplugNet.Core.Node
 
         private void AddConnectedHandler()
         {
-            this.Client.UseConnectedHandler(_ =>
+            this.Client.UseConnectedHandler(e =>
             {
+                var result = e.AuthenticateResult;
+                this.LogAction?.Invoke($"MQTT Client CONNECTED. ResultCode={result?.ResultCode}, IsSessionPresent={result?.IsSessionPresent}, " +
+                    $"MaximumQoS={result?.MaximumQoS}, RetainAvailable={result?.RetainAvailable}, ReasonString={result?.ReasonString}");
+
                 // Invoke connected callback.
                 this.OnConnected?.Invoke();
             });
@@ -277,8 +282,11 @@ namespace SparkplugNet.Core.Node
         /// <exception cref="ArgumentNullException">The options are null.</exception>
         private void AddDisconnectedHandler()
         {
-            this.Client.UseDisconnectedHandler(_ =>
+            this.Client.UseDisconnectedHandler(e =>
             {
+                this.LogAction?.Invoke($"MQTT Client DISCONNECTED. ClientWasConnected={e.ClientWasConnected}, Reason={e.Reason}, " +
+                    $"Exception={e.Exception?.GetType().Name}: {e.Exception?.Message}");
+
                 // Invoke disconnected callback.
                 this.OnDisconnected?.Invoke();
             });
@@ -292,11 +300,14 @@ namespace SparkplugNet.Core.Node
             this.Client.UseApplicationMessageReceivedHandler(e =>
             {
                 var topic = e.ApplicationMessage.Topic;
+                this.LogAction?.Invoke($"Message received. Topic={topic}, QoS={e.ApplicationMessage.QualityOfServiceLevel}, Retain={e.ApplicationMessage.Retain}");
 
                 // Handle the STATE message before anything else as they're UTF-8 encoded.
                 if (topic.Contains(SparkplugMessageType.StateMessage.GetDescription()))
                 {
-                    this.StatusMessageReceived?.Invoke(Encoding.UTF8.GetString(e.ApplicationMessage.Payload));
+                    var statePayload = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
+                    this.LogAction?.Invoke($"STATE payload received on {topic}: {statePayload}");
+                    this.StatusMessageReceived?.Invoke(statePayload);
                     return;
                 }
 
@@ -432,9 +443,10 @@ namespace SparkplugNet.Core.Node
             builder.WithWillMessage(willMessage);
             this.ClientOptions = builder.Build();
 
-            // Debug output.
-            var json = this.ClientOptions.ToJson();
-            this.LogAction?.Invoke($"Node ConnectAsync attempt\n{json}");
+            // Debug output. NOTE: credentials are intentionally omitted from this log line.
+            this.LogAction?.Invoke($"Node ConnectAsync attempt. Broker={this.options.BrokerAddress}:{this.options.Port}, ClientId={this.options.ClientId}, " +
+                $"UseTls={this.options.UseTls}, ScadaHostIdentifier={this.options.ScadaHostIdentifier}, GroupIdentifier={this.options.GroupIdentifier}, " +
+                $"EdgeNodeIdentifier={this.options.EdgeNodeIdentifier}, SessionNumber={this.LastSessionNumber}");
             try
             {
                 this.options.CancellationToken ??= CancellationToken.None;
@@ -442,6 +454,7 @@ namespace SparkplugNet.Core.Node
             }
             catch (Exception e)
             {
+                this.LogAction?.Invoke($"Node ConnectAsync threw an exception: {e.GetType().Name}: {e.Message}");
                 this.OnException?.Invoke(e);
             }
         }
@@ -462,16 +475,18 @@ namespace SparkplugNet.Core.Node
 
             // Debug output.
             var json = onlineMessage.ToJson();
-            this.LogAction?.Invoke($"Attempting Node ConnectAsync (NBIRTH)\n{json}");
+            this.LogAction?.Invoke($"Attempting NBIRTH Publish\n{json}");
 
             // Publish data.
             try
             {
                 this.options.CancellationToken ??= CancellationToken.None;
-                await this.Client.PublishAsync(onlineMessage, this.options.CancellationToken.Value);
+                var result = await this.Client.PublishAsync(onlineMessage, this.options.CancellationToken.Value);
+                this.LogAction?.Invoke($"NBIRTH Publish result: ReasonCode={result.ReasonCode}");
             }
             catch (Exception e)
             {
+                this.LogAction?.Invoke($"NBIRTH Publish threw an exception: {e.GetType().Name}: {e.Message}");
                 this.OnException?.Invoke(e);
             }
         }
@@ -490,22 +505,39 @@ namespace SparkplugNet.Core.Node
             {
                 var nodeCommandSubscribeTopic =
                     this.TopicGenerator.GetNodeCommandSubscribeTopic(this.NameSpace, this.options.GroupIdentifier, this.options.EdgeNodeIdentifier);
-                this.LogAction?.Invoke($"Subscribing to Node Commands\n{nodeCommandSubscribeTopic}");
-                await this.Client.SubscribeAsync(nodeCommandSubscribeTopic, MqttQualityOfServiceLevel.AtLeastOnce);
+                this.LogAction?.Invoke($"Subscribing to Node Commands: {nodeCommandSubscribeTopic}");
+                var nodeCommandResult = await this.Client.SubscribeAsync(nodeCommandSubscribeTopic, MqttQualityOfServiceLevel.AtLeastOnce);
+                this.LogAction?.Invoke($"Subscribe result for {nodeCommandSubscribeTopic}: {this.DescribeSubscribeResult(nodeCommandResult)}");
 
                 var deviceCommandSubscribeTopic =
                     this.TopicGenerator.GetWildcardDeviceCommandSubscribeTopic(this.NameSpace, this.options.GroupIdentifier, this.options.EdgeNodeIdentifier);
-                this.LogAction?.Invoke($"Subscribing to Device Commands\n{deviceCommandSubscribeTopic}");
-                await this.Client.SubscribeAsync(deviceCommandSubscribeTopic, MqttQualityOfServiceLevel.AtLeastOnce);
+                this.LogAction?.Invoke($"Subscribing to Device Commands: {deviceCommandSubscribeTopic}");
+                var deviceCommandResult = await this.Client.SubscribeAsync(deviceCommandSubscribeTopic, MqttQualityOfServiceLevel.AtLeastOnce);
+                this.LogAction?.Invoke($"Subscribe result for {deviceCommandSubscribeTopic}: {this.DescribeSubscribeResult(deviceCommandResult)}");
 
                 var stateSubscribeTopic = this.TopicGenerator.GetStateSubscribeTopic(this.options.ScadaHostIdentifier);
-                this.LogAction?.Invoke($"Subscribing to State Status\n{stateSubscribeTopic}");
-                await this.Client.SubscribeAsync(stateSubscribeTopic, MqttQualityOfServiceLevel.AtLeastOnce);
+                this.LogAction?.Invoke($"Subscribing to State Status (Primary Host, legacy format): {stateSubscribeTopic}");
+                var stateResult = await this.Client.SubscribeAsync(stateSubscribeTopic, MqttQualityOfServiceLevel.AtLeastOnce);
+                this.LogAction?.Invoke($"Subscribe result for {stateSubscribeTopic}: {this.DescribeSubscribeResult(stateResult)}");
+
+                // Sparkplug 3.0+ compliant hosts (e.g. current Ignition MQTT Engine versions) publish
+                // STATE under the namespaced topic instead of the legacy bare "STATE/<id>" topic.
+                var namespacedStateSubscribeTopic = this.TopicGenerator.GetNamespacedStateSubscribeTopic(this.NameSpace, this.options.ScadaHostIdentifier);
+                this.LogAction?.Invoke($"Subscribing to State Status (Primary Host, namespaced format): {namespacedStateSubscribeTopic}");
+                var namespacedStateResult = await this.Client.SubscribeAsync(namespacedStateSubscribeTopic, MqttQualityOfServiceLevel.AtLeastOnce);
+                this.LogAction?.Invoke($"Subscribe result for {namespacedStateSubscribeTopic}: {this.DescribeSubscribeResult(namespacedStateResult)}");
             }
             catch (Exception e)
             {
+                this.LogAction?.Invoke($"SubscribeInternal threw an exception: {e.GetType().Name}: {e.Message}");
                 this.OnException?.Invoke(e);
             }
+        }
+
+        /// <summary>Builds a short human-readable summary of an MQTT subscribe result for logging.</summary>
+        private string DescribeSubscribeResult(MqttClientSubscribeResult result)
+        {
+            return string.Join(", ", result.Items.Select(i => $"{i.TopicFilter.Topic}={i.ResultCode}"));
         }
 
         /// <summary>Disconnects the Sparkplug device from the MQTT broker.</summary>
@@ -538,9 +570,11 @@ namespace SparkplugNet.Core.Node
                 this.options.CancellationToken ??= CancellationToken.None;
                 await this.Client.PublishAsync(willMessage, this.options.CancellationToken.Value);
                 await this.Client.DisconnectAsync();
+                this.LogAction?.Invoke("Node DisconnectAsync completed.");
             }
             catch (Exception e)
             {
+                this.LogAction?.Invoke($"Node DisconnectAsync threw an exception: {e.GetType().Name}: {e.Message}");
                 this.OnException?.Invoke(e);
             }
         }

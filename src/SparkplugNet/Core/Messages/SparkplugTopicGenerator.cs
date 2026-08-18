@@ -65,13 +65,28 @@ namespace SparkplugNet.Core.Messages
         }
 
         /// <summary>
-        /// Gets state subscription topic.
+        /// Gets state subscription topic using the legacy (pre-Sparkplug 3.0) format without a namespace
+        /// prefix, e.g. "STATE/scada1". Older Sparkplug host applications (e.g. older Ignition MQTT Engine
+        /// versions) publish STATE messages on this topic.
         /// </summary>
         /// <param name="scadaHostIdentifier">The SCADA host identifier.</param>
         /// <returns>The state subscription topic <see cref="string"/></returns>
         public string GetStateSubscribeTopic(string scadaHostIdentifier)
         {
             return $"{SparkplugMessageType.StateMessage.GetDescription()}/{scadaHostIdentifier}";
+        }
+
+        /// <summary>
+        /// Gets the state subscription topic using the namespaced Sparkplug 3.0 format, e.g.
+        /// "spBv1.0/STATE/scada1". Newer Sparkplug 3.0-compliant host applications (e.g. current
+        /// Ignition MQTT Engine versions with "Primary Host Enabled") publish STATE messages on this topic.
+        /// </summary>
+        /// <param name="nameSpace">The namespace.</param>
+        /// <param name="scadaHostIdentifier">The SCADA host identifier.</param>
+        /// <returns>The namespaced state subscription topic <see cref="string"/></returns>
+        public string GetNamespacedStateSubscribeTopic(SparkplugNamespace nameSpace, string scadaHostIdentifier)
+        {
+            return $"{nameSpace.GetDescription()}/{SparkplugMessageType.StateMessage.GetDescription()}/{scadaHostIdentifier}";
         }
 
         /// <summary>
