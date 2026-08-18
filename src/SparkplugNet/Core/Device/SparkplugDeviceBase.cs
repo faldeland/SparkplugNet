@@ -273,9 +273,14 @@ namespace SparkplugNet.Core.Device
             // Publish data.
             this.options.CancellationToken ??= CancellationToken.None;
 
+            this.ChildOf.LogAction?.Invoke(
+                $"Publishing DBIRTH for device '{this.options.DeviceIdentifier}' (Group={this.options.GroupIdentifier}, EdgeNode={this.options.EdgeNodeIdentifier}).");
+
             try
             {
                 var result = await this.ChildOf.Client.PublishAsync(onlineMessage, this.options.CancellationToken.Value);
+                this.ChildOf.LogAction?.Invoke(
+                    $"DBIRTH publish result for device '{this.options.DeviceIdentifier}': {result.ReasonCode}.");
                 switch (result.ReasonCode)
                 {
                     case MqttClientPublishReasonCode.Success:
@@ -287,6 +292,7 @@ namespace SparkplugNet.Core.Device
             }
             catch (Exception e)
             {
+                this.ChildOf.LogAction?.Invoke($"DBIRTH publish failed for device '{this.options.DeviceIdentifier}': {e.Message}");
                 this.ChildOf.OnException?.Invoke(e);
             }
         }

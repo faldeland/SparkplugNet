@@ -501,6 +501,11 @@ namespace SparkplugNet.Core.Node
                 var stateSubscribeTopic = this.TopicGenerator.GetStateSubscribeTopic(this.options.ScadaHostIdentifier);
                 this.LogAction?.Invoke($"Subscribing to State Status\n{stateSubscribeTopic}");
                 await this.Client.SubscribeAsync(stateSubscribeTopic, MqttQualityOfServiceLevel.AtLeastOnce);
+
+                // Sparkplug 3.0+ hosts publish STATE on the namespaced topic (e.g. spBv1.0/STATE/hostId).
+                var namespacedStateSubscribeTopic = this.TopicGenerator.GetNamespacedStateSubscribeTopic(this.NameSpace, this.options.ScadaHostIdentifier);
+                this.LogAction?.Invoke($"Subscribing to State Status\n{namespacedStateSubscribeTopic}");
+                await this.Client.SubscribeAsync(namespacedStateSubscribeTopic, MqttQualityOfServiceLevel.AtLeastOnce);
             }
             catch (Exception e)
             {

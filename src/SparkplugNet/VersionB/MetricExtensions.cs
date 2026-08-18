@@ -69,9 +69,10 @@
             ulong timestamp,
             object value,
             bool isTransient,
-            bool isHistorical)
+            bool isHistorical,
+            bool force = false)
         {
-            SetMetric(metrics, metricName, timestamp, value, isNull: false, isTransient: isTransient, isHistorical: isHistorical);
+            SetMetric(metrics, metricName, timestamp, value, isNull: false, isTransient: isTransient, isHistorical: isHistorical, force: force);
         }
 
 
@@ -102,9 +103,10 @@
             this List<Payload.Metric> metrics,
             string metricName,
             ulong timestamp,
-            object value)
+            object value,
+            bool force = false)
         {
-            SetMetric(metrics, metricName, timestamp, value, isNull: false, isTransient: true, isHistorical: false);
+            SetMetric(metrics, metricName, timestamp, value, isNull: false, isTransient: true, isHistorical: false, force: force);
         }
 
         /// <summary>
@@ -141,7 +143,8 @@
             object value,
             bool isNull = false,
             bool isTransient = false,
-            bool isHistorical = false)
+            bool isHistorical = false,
+            bool force = false)
         {
             var metric = metrics.FirstOrDefault(x => string.Equals(x.Name, metricName, StringComparison.CurrentCultureIgnoreCase));
             if (metric == null)
@@ -157,7 +160,7 @@
                     try
                     {
                         var stringValue = value is null || isNull ? null : value.ToString();
-                        if (metric.StringValue == stringValue) { return; }
+                        if (!force && metric.StringValue == stringValue) { return; }
                         metric.StringValue = stringValue;
                     }
                     catch (Exception)
@@ -176,7 +179,7 @@
                     {
                         var intValue = value is null || isNull ? 0 : Convert.ToUInt32(value);
                         if (intValue < 0) intValue = 0;
-                        if (metric.IntValue == intValue) { return; }
+                        if (!force && metric.IntValue == intValue) { return; }
                         metric.IntValue = intValue;
                     }
                     catch (Exception)
@@ -191,7 +194,7 @@
                     try
                     {
                         var longValue = value is null || isNull ? 0 : value is DateTime time ? (ulong)((DateTimeOffset)time).ToUnixTimeMilliseconds() : Convert.ToUInt64(value);
-                        if (metric.LongValue == longValue) { return; }
+                        if (!force && metric.LongValue == longValue) { return; }
                         metric.LongValue = longValue;
                     }
                     catch (Exception)
@@ -204,7 +207,7 @@
                     try
                     {
                         var floatValue = value is null || isNull ? 0 : Convert.ToSingle(value);
-                        if (Math.Abs(metric.FloatValue - floatValue) < .001) { return; }
+                        if (!force && Math.Abs(metric.FloatValue - floatValue) < .001) { return; }
                         metric.FloatValue = floatValue;
                     }
                     catch (Exception)
@@ -217,7 +220,7 @@
                     try
                     {
                         var doubleValue = value is null || isNull ? 0 : Convert.ToDouble(value);
-                        if (Math.Abs(metric.DoubleValue - doubleValue) < .001) { return; }
+                        if (!force && Math.Abs(metric.DoubleValue - doubleValue) < .001) { return; }
                         metric.DoubleValue = doubleValue;
                     }
                     catch (Exception)
@@ -230,7 +233,7 @@
                     try
                     {
                         var booleanValue = value is null || isNull ? false : Convert.ToBoolean(value);
-                        if (metric.BooleanValue == booleanValue) { return; }
+                        if (!force && metric.BooleanValue == booleanValue) { return; }
                         metric.BooleanValue = booleanValue;
                     }
                     catch (Exception)

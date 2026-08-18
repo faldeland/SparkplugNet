@@ -75,6 +75,17 @@ namespace SparkplugNet.Core.Messages
         }
 
         /// <summary>
+        /// Gets the namespaced state subscription topic (Sparkplug 3.0+ hosts, e.g. spBv1.0/STATE/hostId).
+        /// </summary>
+        /// <param name="nameSpace">The namespace.</param>
+        /// <param name="scadaHostIdentifier">The SCADA host identifier.</param>
+        /// <returns>The namespaced state subscription topic <see cref="string"/></returns>
+        public string GetNamespacedStateSubscribeTopic(SparkplugNamespace nameSpace, string scadaHostIdentifier)
+        {
+            return $"{nameSpace.GetDescription()}/{SparkplugMessageType.StateMessage.GetDescription()}/{scadaHostIdentifier}";
+        }
+
+        /// <summary>
         /// Gets the topic (Except STATE messages).
         /// </summary>
         /// <param name="nameSpace">The namespace.</param>
